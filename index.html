@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengembaraan Aimi di Pasar Raya: Membuat Pilihan</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Inter & Fredoka / Open Sans untuk elemen mesra kanak-kanak -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tone.js untuk kesan bunyi audio -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Canvas Confetti untuk kesan kemenangan -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Fredoka', 'Inter', sans-serif;
+            background: linear-gradient(135deg, #a8edda 0%, #fed6e3 100%);
+            min-height: 100vh;
+        }
+
+        .bubbly-button {
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            box-shadow: 0px 6px 0px rgba(0, 0, 0, 0.15);
+        }
+
+        .bubbly-button:active {
+            transform: translateY(4px);
+            box-shadow: 0px 2px 0px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-bounce {
+            animation: bounceIn 0.5s ease;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.9); opacity: 0; }
+            70% { transform: scale(1.03); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+
+        .heart-pulse {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center p-3 md:p-6 text-gray-800 antialiased">
+
+    <!-- Container Utama Permainan -->
+    <div class="w-full max-w-4xl bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border-4 border-yellow-300 overflow-hidden relative min-h-[600px] flex flex-col justify-between">
+        
+        <!-- Header Status Bar -->
+        <header id="header-bar" class="hidden bg-yellow-400 p-4 rounded-t-2xl flex flex-wrap justify-between items-center shadow-md">
+            <!-- Tahap Semasa -->
+            <div class="flex items-center space-x-2 bg-white/80 px-4 py-1.5 rounded-full shadow-sm">
+                <i class="fa-solid fa-map-location-dot text-indigo-600 text-lg"></i>
+                <span id="stage-indicator" class="font-bold text-indigo-900 text-sm md:text-base">Tahap 1: Rak Buku</span>
+            </div>
+
+            <!-- Nyawa & Skor -->
+            <div class="flex items-center space-x-4 mt-2 sm:mt-0">
+                <!-- Nyawa -->
+                <div class="flex items-center space-x-1 bg-red-100 border border-red-300 px-3 py-1 rounded-full">
+                    <span class="text-xs md:text-sm font-bold text-red-700 mr-1">Nyawa:</span>
+                    <div id="lives-container" class="flex space-x-1">
+                        <i class="fa-solid fa-heart text-red-500 heart-pulse text-lg"></i>
+                        <i class="fa-solid fa-heart text-red-500 heart-pulse text-lg"></i>
+                        <i class="fa-solid fa-heart text-red-500 heart-pulse text-lg"></i>
+                    </div>
+                </div>
+
+                <!-- Skor -->
+                <div class="bg-indigo-100 border border-indigo-300 px-4 py-1 rounded-full text-indigo-800 font-bold text-sm md:text-base shadow-sm">
+                    ⭐ Markah: <span id="score-text" class="text-indigo-900">0</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic Content Body -->
+        <main id="main-content" class="p-4 md:p-8 flex-grow flex flex-col justify-center items-center text-center">
+            
+            <!-- SKRIN UTAMA / MULA -->
+            <div id="screen-start" class="space-y-6 max-w-2xl py-6 card-bounce">
+                <div class="inline-block bg-pink-100 border-2 border-pink-300 text-pink-700 px-4 py-1.5 rounded-full text-sm font-semibold mb-2">
+                    📖 Bahasa Melayu Tahun 1 • Membaca
+                </div>
+                <h1 class="text-3xl md:text-5xl font-extrabold text-indigo-900 leading-tight">
+                    Pengembaraan Aimi di Pasar Raya 🛍️
+                </h1>
+                <p class="text-gray-600 text-base md:text-lg font-medium">
+                    Mari bantu Aimi membuat keputusan yang bijak semasa membeli-belah bersama ibunya! Jawab soalan dengan betul untuk mengumpul markah dan badge.
+                </p>
+
+                <!-- Visual Maskot -->
+                <div class="flex justify-center items-center space-x-4 py-2">
+                    <div class="w-24 h-24 md:w-32 md:h-32 bg-yellow-200 border-4 border-yellow-400 rounded-full flex items-center justify-center text-5xl md:text-6xl shadow-inner">
+                        👧🏻
+                    </div>
+                    <div class="w-20 h-20 md:w-24 md:h-24 bg-teal-200 border-4 border-teal-400 rounded-full flex items-center justify-center text-4xl md:text-5xl shadow-inner">
+                        👩🏻
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row justify-center gap-4 pt-4">
+                    <button onclick="startGame()" class="bubbly-button bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow-lg border-b-4 border-emerald-700 flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-play"></i>
+                        <span>Mula Bermain</span>
+                    </button>
+                    <button onclick="showLeaderboardModal()" class="bubbly-button bg-sky-500 hover:bg-sky-600 text-white font-bold text-lg px-6 py-4 rounded-2xl shadow-lg border-b-4 border-sky-700 flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-trophy"></i>
+                        <span>Papan Pendahuluan</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SKRIN STORY MODAL / DIALOG -->
+            <div id="screen-story" class="hidden max-w-2xl space-y-6 card-bounce w-full">
+                <div class="bg-indigo-50 border-2 border-indigo-200 rounded-3xl p-6 text-left relative shadow-md">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <span id="story-avatar" class="text-4xl">📚</span>
+                        <div>
+                            <h3 id="story-title" class="font-bold text-xl text-indigo-900">Tahap 1: Pasar Raya</h3>
+                            <p class="text-xs text-indigo-600 font-semibold">Jalan Cerita Aimi</p>
+                        </div>
+                    </div>
+                    <p id="story-text" class="text-gray-700 text-lg leading-relaxed font-medium bg-white p-4 rounded-2xl border border-indigo-100 shadow-sm">
+                        Cerita akan dipaparkan di sini...
+                    </p>
+                </div>
+                <button onclick="proceedToQuestions()" class="bubbly-button w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white font-bold text-xl px-10 py-4 rounded-2xl border-b-4 border-amber-700 shadow-lg">
+                    Teruskan Soalan <i class="fa-solid fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+
+            <!-- SKRIN KUIZ / SOALAN -->
+            <div id="screen-quiz" class="hidden w-full max-w-2xl space-y-6 card-bounce">
+                <!-- Banner Kemajuan Soalan -->
+                <div class="w-full bg-gray-200 rounded-full h-3.5 dark:bg-gray-200 overflow-hidden shadow-inner">
+                    <div id="progress-bar" class="bg-indigo-600 h-3.5 rounded-full transition-all duration-300" style="width: 10%"></div>
+                </div>
+
+                <!-- Kad Soalan -->
+                <div class="bg-white border-4 border-indigo-200 rounded-3xl p-6 md:p-8 shadow-xl relative">
+                    <div class="flex justify-between items-center mb-4">
+                        <span id="question-number" class="text-sm font-bold bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full">
+                            Soalan 1 / 10
+                        </span>
+                        <button onclick="readQuestionAloud()" class="bg-pink-100 text-pink-700 hover:bg-pink-200 p-2 rounded-full transition" title="Baca Soalan">
+                            <i class="fa-solid fa-volume-high text-lg"></i>
+                        </button>
+                    </div>
+
+                    <h2 id="question-text" class="text-xl md:text-2xl font-bold text-gray-800 text-left mb-6 leading-snug">
+                        Teks Soalan...
+                    </h2>
+
+                    <!-- Pilihan Jawapan -->
+                    <div id="options-container" class="grid grid-cols-1 gap-3">
+                        <!-- Pilihan jawapan diisi dynamic oleh JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- SKRIN GAME OVER -->
+            <div id="screen-gameover" class="hidden max-w-lg space-y-6 card-bounce text-center py-4">
+                <div class="text-7xl">💔</div>
+                <h2 class="text-3xl md:text-4xl font-extrabold text-red-600">Alamak! Nyawa Dah Habis</h2>
+                <p class="text-gray-600 font-medium text-lg">Jangan putus asa! Aimi percaya anda boleh buat lebih baik lagi. Mari cuba sekali lagi!</p>
+                <button onclick="restartGame()" class="bubbly-button bg-red-500 hover:bg-red-600 text-white font-bold text-xl px-8 py-4 rounded-2xl border-b-4 border-red-700 shadow-lg">
+                    <i class="fa-solid fa-rotate-right mr-2"></i> Cuba Lagi
+                </button>
+            </div>
+
+            <!-- SKRIN KEMENANGAN / KEPUTUSAN AKHIR -->
+            <div id="screen-victory" class="hidden max-w-xl space-y-6 card-bounce text-center py-4 w-full">
+                <div class="text-6xl animate-bounce">🎉</div>
+                <h2 class="text-3xl md:text-4xl font-extrabold text-indigo-900">Tahniah! Anda Berjaya!</h2>
+                
+                <!-- Kad Keputusan & Badge -->
+                <div class="bg-gradient-to-br from-yellow-50 to-amber-100 border-4 border-yellow-300 rounded-3xl p-6 shadow-md space-y-4">
+                    <div class="text-xl font-bold text-amber-900">
+                        Markah Akhir Anda: <span id="final-score" class="text-3xl font-extrabold text-indigo-600">0</span> / 100
+                    </div>
+
+                    <!-- Lencana Ganjaran -->
+                    <div class="bg-white p-4 rounded-2xl border border-yellow-200 shadow-sm flex flex-col items-center">
+                        <div id="badge-icon" class="text-6xl mb-2">🏆</div>
+                        <div id="badge-title" class="font-extrabold text-xl text-yellow-800">Lencana Pembeli Bijak</div>
+                        <div id="badge-desc" class="text-xs text-gray-500 mt-1">Hebat! Anda memahami cara berbelanja tanpa membazir.</div>
+                    </div>
+                </div>
+
+                <!-- Form Simpan Rekod -->
+                <div id="leaderboard-form" class="bg-white border-2 border-indigo-100 p-4 rounded-2xl shadow-sm space-y-3">
+                    <label class="block text-sm font-bold text-gray-700">Masukkan Nama Anda ke Papan Pendahuluan:</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="player-name-input" placeholder="Nama anda (cth: Aiman)" maxlength="15" class="w-full px-4 py-2 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:outline-none font-semibold text-center">
+                        <button onclick="submitScore()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2 rounded-xl transition shadow">
+                            Simpan
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row justify-center gap-3 pt-2">
+                    <button onclick="restartGame()" class="bubbly-button bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-lg px-6 py-3 rounded-2xl border-b-4 border-emerald-700 shadow">
+                        <i class="fa-solid fa-rotate-right mr-1"></i> Main Semula
+                    </button>
+                    <button onclick="showLeaderboardModal()" class="bubbly-button bg-sky-500 hover:bg-sky-600 text-white font-bold text-lg px-6 py-3 rounded-2xl border-b-4 border-sky-700 shadow">
+                        <i class="fa-solid fa-trophy mr-1"></i> Lihat Leaderboard
+                    </button>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Footer Ringkas -->
+        <footer class="p-3 bg-white/50 border-t border-gray-200 text-center text-xs text-gray-500 font-semibold">
+            Buku Teks Bahasa Melayu Tahun 1 • Tema: Membuat Pilihan
+        </footer>
+    </div>
+
+    <!-- MODAL LEADERBOARD / PAPAN PENDAHULUAN -->
+    <div id="leaderboard-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl border-4 border-sky-400 p-6 max-w-md w-full shadow-2xl space-y-4 card-bounce">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-2xl font-extrabold text-indigo-900 flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-yellow-500"></i> Papan Pendahuluan
+                </h3>
+                <button onclick="closeLeaderboardModal()" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+            </div>
+
+            <!-- Senarai Skor -->
+            <div class="space-y-2 max-h-60 overflow-y-auto pr-1" id="leaderboard-list">
+                <!-- Diisi dynamic oleh JS -->
+            </div>
+
+            <button onclick="closeLeaderboardModal()" class="bubbly-button w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl border-b-4 border-indigo-800">
+                Tutup
+            </button>
+        </div>
+    </div>
+
+    <!-- LOGIK JAVASCRIPT PERMAINAN -->
+    <script>
+        // Data Permainan & Teks Rujukan Buku Teks
+        const storyStages = [
+            {
+                stage: 1,
+                title: "Tahap 1: Di Pasar Raya & Rak Buku",
+                avatar: "🏪",
+                text: "Aimi dan ibunya pergi ke pasar raya. Aimi hendak membeli buku latihan. Di sebelah rak buku, terdapat bekas minuman yang berwarna-warni."
+            },
+            {
+                stage: 2,
+                title: "Tahap 2: Bekas Air Berwarna-Warni",
+                avatar: "🥤",
+                text: "'Wah, cantiknya bekas air ini!' kata Aimi di dalam hatinya. Dia pun membelek-belek bekas air itu. Ibu Aimi memerhatikannya dan berkata, 'Kalau suka, belilah.'"
+            },
+            {
+                stage: 3,
+                title: "Tahap 3: Keputusan Pintar Aimi",
+                avatar: "💡",
+                text: "'Tapi... bekas air saya masih elok, ibu. Membazir sahaja kalau saya membeli bekas ini,' jawab Aimi. 'Lagi pun saya memang hendak membeli buku latihan sahaja,' kata Aimi sambil meletakkan bekas air itu semula."
+            }
+        ];
+
+        const questionsData = [
+            // Tahap 1: Rak Buku & Kedai (Soalan 1 - 3)
+            {
+                stage: 1,
+                q: "1. Ke manakah Aimi dan ibunya pergi?",
+                options: ["Taman permainan", "Pasar raya", "Kedai mainan", "Sekolah"],
+                answer: 1
+            },
+            {
+                stage: 1,
+                q: "2. Apakah barang yang sebenarnya hendak dibeli oleh Aimi?",
+                options: ["Buku latihan", "Pensel warna", "Bekas minuman", "Beg sekolah"],
+                answer: 0
+            },
+            {
+                stage: 1,
+                q: "3. Di manakah bekas minuman itu diletakkan?",
+                options: ["Di sebelah rak buku", "Di dalam kaunter", "Di kedai kasur", "Di luar kedai"],
+                answer: 0
+            },
+            
+            // Tahap 2: Pilihan Wise Aimi (Soalan 4 - 7)
+            {
+                stage: 2,
+                q: "4. Apakah yang menarik perhatian Aimi di sebelah rak buku?",
+                options: ["Mainan robot", "Bekas minuman berwarna-warni", "Buku cerita kartun", "Coklat dan gula-gula"],
+                answer: 1
+            },
+            {
+                stage: 2,
+                q: "5. Apakah yang dilakukan oleh Aimi apabila melihat bekas air itu?",
+                options: ["Terus memasukkannya ke dalam bakul", "Membelek-belek bekas air itu", "Menangis nak beli", "Lari tinggalkan ibu"],
+                answer: 1
+            },
+            {
+                stage: 2,
+                q: "6. Siapakah yang memerhatikan gelagat Aimi di pasar raya?",
+                options: ["Ayah Aimi", "Penjual kedai", "Ibu Aimi", "Kawan Aimi"],
+                answer: 2
+            },
+            {
+                stage: 2,
+                q: "7. Apakah kata-kata ibu Aimi apabila melihat Aimi menyukai bekas air itu?",
+                options: ["'Jangan sentuh!'", "'Kalau suka, belilah.'", "'Minta maaf, tak boleh.'", "'Beli dua sekali.'"],
+                answer: 1
+            },
+
+            // Tahap 3: Kasir & Keputusan Pintar (Soalan 8 - 10)
+            {
+                stage: 3,
+                q: "8. Mengapakah Aimi tidak mahu membeli bekas air baharu itu?",
+                options: ["Sebab bekas airnya masih elok", "Sebab dia tiada duit", "Sebab ibunya marah", "Sebab bekas air itu rosak"],
+                answer: 0
+            },
+            {
+                stage: 3,
+                q: "9. Apakah amalan buruk yang cuba dielakkan oleh Aimi?",
+                options: ["Kedekut", "Membazir", "Pemalas", "Cepat marah"],
+                answer: 1
+            },
+            {
+                stage: 3,
+                q: "10. Apakah tindakan pintar Aimi di akhir cerita?",
+                options: ["Menyorokkan bekas air", "Meletakkan bekas air itu semula di tempat asalnya", "Bawa balik tanpa bayar", "Membeli bekas air itu juga"],
+                answer: 1
+            }
+        ];
+
+        // State Permainan
+        let currentQuestionIndex = 0;
+        let currentStage = 1;
+        let lives = 3;
+        let score = 0;
+        let synth = null;
+
+        // Inisialisasi Audio Tone.js
+        function initAudio() {
+            if (!synth) {
+                synth = new Tone.Synth().toDestination();
+            }
+        }
+
+        function playSound(type) {
+            try {
+                initAudio();
+                if (type === 'correct') {
+                    const now = Tone.now();
+                    synth.triggerAttackRelease("C5", "8n", now);
+                    synth.triggerAttackRelease("E5", "8n", now + 0.1);
+                    synth.triggerAttackRelease("G5", "8n", now + 0.2);
+                } else if (type === 'wrong') {
+                    const now = Tone.now();
+                    synth.triggerAttackRelease("G3", "8n", now);
+                    synth.triggerAttackRelease("C3", "8n", now + 0.15);
+                } else if (type === 'win') {
+                    const now = Tone.now();
+                    synth.triggerAttackRelease("C4", "8n", now);
+                    synth.triggerAttackRelease("E4", "8n", now + 0.1);
+                    synth.triggerAttackRelease("G4", "8n", now + 0.2);
+                    synth.triggerAttackRelease("C5", "4n", now + 0.3);
+                }
+            } catch (e) {
+                console.log("Audio playback error:", e);
+            }
+        }
+
+        // Fungsi Memulakan Permainan
+        function startGame() {
+            currentQuestionIndex = 0;
+            currentStage = 1;
+            lives = 3;
+            score = 0;
+            
+            updateHeaderUI();
+            showScreen('screen-story');
+            loadStageStory(1);
+        }
+
+        function restartGame() {
+            startGame();
+        }
+
+        // Tunjuk skrin spesifik
+        function showScreen(screenId) {
+            const screens = ['screen-start', 'screen-story', 'screen-quiz', 'screen-gameover', 'screen-victory'];
+            screens.forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+
+            const headerBar = document.getElementById('header-bar');
+            if (screenId === 'screen-start' || screenId === 'screen-gameover') {
+                headerBar.classList.add('hidden');
+            } else {
+                headerBar.classList.remove('hidden');
+            }
+        }
+
+        // Kemaskini Header Nyawa & Markah
+        function updateHeaderUI() {
+            document.getElementById('score-text').innerText = score;
+            
+            // Nyawa
+            const livesContainer = document.getElementById('lives-container');
+            livesContainer.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                if (i < lives) {
+                    livesContainer.innerHTML += `<i class="fa-solid fa-heart text-red-500 heart-pulse text-lg"></i>`;
+                } else {
+                    livesContainer.innerHTML += `<i class="fa-solid fa-heart text-gray-300 text-lg"></i>`;
+                }
+            }
+
+            // Indicator Tahap
+            const stageText = document.getElementById('stage-indicator');
+            if (currentStage === 1) stageText.innerText = "Tahap 1: Rak Buku & Kedai";
+            else if (currentStage === 2) stageText.innerText = "Tahap 2: Pilihan Wise Aimi";
+            else if (currentStage === 3) stageText.innerText = "Tahap 3: Keputusan Pintar";
+        }
+
+        // Muat Cerita Tahap
+        function loadStageStory(stageNum) {
+            const stageData = storyStages.find(s => s.stage === stageNum);
+            if (stageData) {
+                document.getElementById('story-title').innerText = stageData.title;
+                document.getElementById('story-avatar').innerText = stageData.avatar;
+                document.getElementById('story-text').innerText = stageData.text;
+            }
+        }
+
+        // Teruskan ke soalan selepas membaca cerita
+        function proceedToQuestions() {
+            showScreen('screen-quiz');
+            loadQuestion();
+        }
+
+        // Muat Kad Soalan
+        function loadQuestion() {
+            const qData = questionsData[currentQuestionIndex];
+            
+            // Semak jika perlu tukar cerita tahap
+            if (qData.stage !== currentStage) {
+                currentStage = qData.stage;
+                updateHeaderUI();
+                loadStageStory(currentStage);
+                showScreen('screen-story');
+                return;
+            }
+
+            // Kemaskini progress bar & soalan
+            const progressPercent = ((currentQuestionIndex + 1) / questionsData.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+            document.getElementById('question-number').innerText = `Soalan ${currentQuestionIndex + 1} / ${questionsData.length}`;
+            document.getElementById('question-text').innerText = qData.q;
+
+            // Jana pilihan jawapan
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            qData.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = "bubbly-button w-full text-left bg-indigo-50 hover:bg-indigo-100 border-2 border-indigo-200 hover:border-indigo-400 p-4 rounded-2xl font-bold text-base md:text-lg text-indigo-900 transition flex items-center space-x-3";
+                btn.onclick = () => checkAnswer(index, btn);
+                
+                const optionLabel = String.fromCharCode(65 + index); // A, B, C, D
+                btn.innerHTML = `
+                    <span class="w-8 h-8 rounded-full bg-indigo-200 text-indigo-800 flex items-center justify-center font-extrabold text-sm flex-shrink-0">${optionLabel}</span>
+                    <span class="flex-grow">${opt}</span>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        // Semak Jawapan
+        function checkAnswer(selectedIndex, buttonElem) {
+            const qData = questionsData[currentQuestionIndex];
+            const allButtons = document.getElementById('options-container').querySelectorAll('button');
+            
+            // Disable all buttons to prevent double tap
+            allButtons.forEach(b => b.onclick = null);
+
+            if (selectedIndex === qData.answer) {
+                // Betul
+                playSound('correct');
+                buttonElem.classList.remove('bg-indigo-50', 'border-indigo-200');
+                buttonElem.classList.add('bg-emerald-500', 'text-white', 'border-emerald-700');
+                score += 10;
+                updateHeaderUI();
+
+                setTimeout(() => {
+                    nextQuestion();
+                }, 1200);
+            } else {
+                // Salah
+                playSound('wrong');
+                buttonElem.classList.remove('bg-indigo-50', 'border-indigo-200');
+                buttonElem.classList.add('bg-red-500', 'text-white', 'border-red-700');
+                
+                // Highlight jawapan betul
+                allButtons[qData.answer].classList.remove('bg-indigo-50', 'border-indigo-200');
+                allButtons[qData.answer].classList.add('bg-emerald-500', 'text-white', 'border-emerald-700');
+
+                lives--;
+                updateHeaderUI();
+
+                setTimeout(() => {
+                    if (lives <= 0) {
+                        showScreen('screen-gameover');
+                    } else {
+                        nextQuestion();
+                    }
+                }, 1500);
+            }
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questionsData.length) {
+                loadQuestion();
+            } else {
+                finishGame();
+            }
+        }
+
+        // Selesai Permainan
+        function finishGame() {
+            playSound('win');
+            showScreen('screen-victory');
+            document.getElementById('final-score').innerText = score;
+
+            // Tentukan Badge berdasarkan skor
+            const badgeIcon = document.getElementById('badge-icon');
+            const badgeTitle = document.getElementById('badge-title');
+            const badgeDesc = document.getElementById('badge-desc');
+
+            if (score >= 90) {
+                badgeIcon.innerText = "🥇";
+                badgeTitle.innerText = "Lencana Wira Bijak BM";
+                badgeDesc.innerText = "Hebat sekali! Anda menjawab dengan tepat dan memahami konsep amalan tidak membazir.";
+            } else if (score >= 60) {
+                badgeIcon.innerText = "🥈";
+                badgeTitle.innerText = "Lencana Pembeli Bijak";
+                badgeDesc.innerText = "Tahniah! Anda telah menjadi pembaca dan pembeli yang bijak.";
+            } else {
+                badgeIcon.innerText = "🥉";
+                badgeTitle.innerText = "Lencana Murid Rajin";
+                badgeDesc.innerText = "Syabas! Teruskan berusaha dan membaca petikan dengan teliti.";
+            }
+
+            // Confetti effect
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+
+        // Sintesis Suara untuk Pembacaan Soalan
+        function readQuestionAloud() {
+            const qData = questionsData[currentQuestionIndex];
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Hentikan yang sedang dibaca jika ada
+                const utterance = new SpeechSynthesisUtterance(qData.q);
+                utterance.lang = 'ms-MY';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Logik Leaderboard / LocalStorage
+        function getLeaderboardData() {
+            const data = localStorage.getItem('aimi_quiz_leaderboard');
+            return data ? JSON.parse(data) : [
+                { name: "Aimi", score: 100 },
+                { name: "Ali", score: 80 },
+                { name: "Siti", score: 70 }
+            ];
+        }
+
+        function submitScore() {
+            const input = document.getElementById('player-name-input');
+            const name = input.value.trim() || "Pemain Bijak";
+            
+            let leaderboard = getLeaderboardData();
+            leaderboard.push({ name: name, score: score });
+            
+            // Susun markah tertinggi
+            leaderboard.sort((a, b) => b.score - a.score);
+            // Ambil Top 5
+            leaderboard = leaderboard.slice(0, 5);
+
+            localStorage.setItem('aimi_quiz_leaderboard', JSON.stringify(leaderboard));
+            
+            document.getElementById('leaderboard-form').innerHTML = `
+                <div class="text-emerald-600 font-bold py-2">
+                    <i class="fa-solid fa-circle-check mr-1"></i> Skor anda telah disimpan!
+                </div>
+            `;
+        }
+
+        function renderLeaderboard() {
+            const listContainer = document.getElementById('leaderboard-list');
+            const leaderboard = getLeaderboardData();
+            
+            listContainer.innerHTML = '';
+            leaderboard.forEach((entry, idx) => {
+                const rankIcons = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+                const item = document.createElement('div');
+                item.className = "flex justify-between items-center bg-sky-50 p-3 rounded-xl border border-sky-100 font-bold";
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <span class="text-xl">${rankIcons[idx] || '🎖️'}</span>
+                        <span class="text-indigo-900">${entry.name}</span>
+                    </div>
+                    <span class="text-amber-600 font-extrabold">${entry.score} Mata</span>
+                `;
+                listContainer.appendChild(item);
+            });
+        }
+
+        function showLeaderboardModal() {
+            renderLeaderboard();
+            document.getElementById('leaderboard-modal').classList.remove('hidden');
+        }
+
+        function closeLeaderboardModal() {
+            document.getElementById('leaderboard-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
